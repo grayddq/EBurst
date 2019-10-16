@@ -1,6 +1,7 @@
 # EBurst 0.1
 
 这个脚本主要提供对Exchange邮件服务器的账户爆破功能，集成了现有主流接口的爆破方式。
+搜了一圈互联网上的工具，发现均不是太理想和实用，故抽时间写了个。
 
 ## 作者 ##
 
@@ -16,15 +17,16 @@
 	3、支持爆破漏洞验证功能
 	4、支持爆破的接口如下：
 	    https://Exchangeserver/ecp
-        https://Exchangeserver/ews
-        https://Exchangeserver/oab
-        https://Exchangeserver/owa
-        https://Exchangeserver/rpc
-        https://Exchangeserver/api
-        https://Exchangeserver/mapi
-        https://Exchangeserver/powershell
+            https://Exchangeserver/ews
+            https://Exchangeserver/oab
+            https://Exchangeserver/owa
+            https://Exchangeserver/rpc
+            https://Exchangeserver/api
+            https://Exchangeserver/mapi
+            https://Exchangeserver/powershell
 	    https://Exchangeserver/autodiscover
 	    https://Exchangeserver/Microsoft-Server-ActiveSync
+	    
     
 
 ## 使用 ##
@@ -32,9 +34,11 @@
 
 程序下载
 
-> root# <kbd>git clone https://github.com/grayddq/GScan.git</kbd>
+> root# <kbd>git clone https://github.com/grayddq/EBurst.git</kbd>
 >
-> root# <kbd>cd GScan</kbd>
+> root# <kbd>cd EBurst</kbd>
+>
+> root# <kbd>sudo pip install -r requirements.txt</kbd>
 
 参数参考
 
