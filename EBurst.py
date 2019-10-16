@@ -183,9 +183,9 @@ class Check_Exchange_User:
             try:
                 response = request.get(url, headers=self.HEADERS, allow_redirects=False)
                 if 404 != response.status_code and 301 != response.status_code and 302 != response.status_code and 403 != response.status_code:
-                    print "URL: %s ,OK code:%s" % (url, response.status_code)
+                    print u"URL: %s ,code:%s" % (url, response.status_code) + u"\t有效可以爆破"
                 else:
-                    print "URL: %s ,Fail code:%s" % (url, response.status_code)
+                    print u"URL: %s ,code:%s" % (url, response.status_code) + u"\t失败无法爆破"
             except:
                 print "URL: %s ,Fail"
 
