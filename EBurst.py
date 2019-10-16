@@ -53,7 +53,7 @@ class Check_Exchange_User:
     def check_NTLM_userpass(self, user, password, url):
         try:
             response = requests.get(url, auth=HttpNtlmAuth(user, password), headers=self.HEADERS)
-            if 401 != response.status_code and 408 != response.status_code:
+            if 401 != response.status_code and 408 != response.status_code and 504 != response.status_code:
                 return True
             else:
                 return False
@@ -69,7 +69,7 @@ class Check_Exchange_User:
             request = requests.session()
             request.keep_alive = False
             response = request.get(url, headers=HEADERS)
-            if 401 != response.status_code and 408 != response.status_code:
+            if 401 != response.status_code and 408 != response.status_code and 504 != response.status_code:
                 return True
             else:
                 return False
