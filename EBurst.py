@@ -182,7 +182,7 @@ class Check_Exchange_User:
             request.keep_alive = False
             try:
                 response = request.get(url, headers=self.HEADERS,allow_redirects=False)
-                if 404 != response.status_code and 301 != response.status_code and 302 != response.status_code:
+                if 404 != response.status_code and 301 != response.status_code and 302 != response.status_code and 403 != response.status_code:
                     print "URL: %s ,OK code:%s" % (url,response.status_code)
                 else:
                     print "URL: %s ,Fail code:%s" % (url, response.status_code)
