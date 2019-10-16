@@ -1,7 +1,7 @@
 # EBurst 0.1
 
 这个脚本主要提供对Exchange邮件服务器的账户爆破功能，集成了现有主流接口的爆破方式。
-搜了一圈互联网上的工具，发现均不是太理想和实用，故抽时间写了个。
+搜了一圈互联网上的工具，未发现太优秀的工具，也和本身的需求不是太贴切，故抽时间写了个半自动化的脚本。
 
 ## 作者 ##
 
@@ -24,8 +24,8 @@
             https://Exchangeserver/api
             https://Exchangeserver/mapi
             https://Exchangeserver/powershell
-	    https://Exchangeserver/autodiscover
-	    https://Exchangeserver/Microsoft-Server-ActiveSync
+	        https://Exchangeserver/autodiscover
+	        https://Exchangeserver/Microsoft-Server-ActiveSync
 	    
     
 
@@ -82,3 +82,5 @@
 
 ![Screenshot](pic/222.png)
 
+
+备注：其中多线程框架代码参考了lijiejie开源的代码，在此感谢。
