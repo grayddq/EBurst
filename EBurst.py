@@ -277,7 +277,7 @@ if __name__ == '__main__':
 
     options, _ = parser.parse_args()
 
-    if (options.userfile or options.user) and (options.passfile or passfile.password) and (options.domain):
+    if (options.userfile or options.user) and (options.passfile or options.password) and (options.domain):
         type = "autodiscover"
         if options.ews:
             type = "ews"
