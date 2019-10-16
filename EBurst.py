@@ -174,23 +174,20 @@ class Check_Exchange_User:
     def _update_found_count(self):
         self.found_count += 1
 
-    #验证接口有效性，判断是否存在接口爆破的可能
+    # 验证接口有效性，判断是否存在接口爆破的可能
     def check_interfac_availab(self):
         for (k, v) in self.URL.items():
             url = v["url"]
             request = requests.session()
             request.keep_alive = False
             try:
-                response = request.get(url, headers=self.HEADERS,allow_redirects=False)
+                response = request.get(url, headers=self.HEADERS, allow_redirects=False)
                 if 404 != response.status_code and 301 != response.status_code and 302 != response.status_code and 403 != response.status_code:
-                    print "URL: %s ,OK code:%s" % (url,response.status_code)
+                    print "URL: %s ,OK code:%s" % (url, response.status_code)
                 else:
                     print "URL: %s ,Fail code:%s" % (url, response.status_code)
             except:
                 print "URL: %s ,Fail"
-
-
-
 
     def _scan(self):
         self.lock.acquire()
@@ -251,7 +248,7 @@ if __name__ == '__main__':
     parser.add_option("-l", dest="user", help=u"指定用户名")
     parser.add_option("-p", dest="password", help=u"指定密码")
     parser.add_option("-T", "--t", dest="thread", type="int", default=10, help=u"线程数量，默认为10")
-    parser.add_option("-C","--c", dest="check", default=False, action='store_true', help=u"验证各接口是否存在爆破的可能性")
+    parser.add_option("-C", "--c", dest="check", default=False, action='store_true', help=u"验证各接口是否存在爆破的可能性")
 
     group = optparse.OptionGroup(parser, "type", u"EBurst 扫描所用的接口")
     group.add_option("--autodiscover", dest="autodiscover", default=True, action='store_true',
