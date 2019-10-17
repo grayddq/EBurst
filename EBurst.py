@@ -9,7 +9,7 @@ class Check_Exchange_User:
     def __init__(self, domain, type=None, user=None, userfile=None, password=None, passfile=None, thread=10):
         self.domain, self.user, self.userfile, self.password, self.passfile, self.thread = domain, user, userfile, password, passfile, thread
         self.URL = {
-            "autodiscover": {"url": "https://%s/autodiscover" % domain, "mode": "Basic"},
+            "autodiscover": {"url": "https://%s/autodiscover" % domain, "mode": "NTLM"},
             "ews": {"url": "https://%s/ews" % domain, "mode": "NTLM"},
             "mapi": {"url": "https://%s/mapi" % domain, "mode": "NTLM"},
             "activesync": {"url": "https://%s/Microsoft-Server-ActiveSync" % domain, "mode": "Basic"},
@@ -250,24 +250,24 @@ if __name__ == '__main__':
 
     group = optparse.OptionGroup(parser, "type", u"EBurst 扫描所用的接口")
     group.add_option("--autodiscover", dest="autodiscover", default=True, action='store_true',
-                     help=u"autodiscover接口，自Exchange Server 2007开始推出的一项自动服务，用于自动配置用户在Outlook中邮箱的相关设置，简化用户登陆使用邮箱的流程。")
+                     help=u"autodiscover接口，NTLM认证方式，自Exchange Server 2007开始推出的一项自动服务，用于自动配置用户在Outlook中邮箱的相关设置，简化用户登陆使用邮箱的流程。")
     group.add_option("--ews", dest="ews", default=False, action='store_true',
-                     help=u"ews接口，Exchange Web Service,实现客户端与服务端之间基于HTTP的SOAP交互")
+                     help=u"ews接口，NTLM认证方式，Exchange Web Service,实现客户端与服务端之间基于HTTP的SOAP交互")
     group.add_option("--mapi", dest="mapi", default=False, action='store_true',
-                     help=u"mapi接口，Outlook连接Exchange的默认方式，在2013和2013之后开始使用，2010 sp2同样支持")
+                     help=u"mapi接口，NTLM认证方式，Outlook连接Exchange的默认方式，在2013和2013之后开始使用，2010 sp2同样支持")
     group.add_option("--activesync", dest="activesync", default=False, action='store_true',
-                     help=u"activesync接口，用于移动应用程序访问电子邮件")
+                     help=u"activesync接口，Basic认证方式，用于移动应用程序访问电子邮件")
     group.add_option("--oab", dest="oab", default=False, action='store_true',
-                     help=u"oab接口，用于为Outlook客户端提供地址簿的副本，减轻Exchange的负担")
+                     help=u"oab接口，NTLM认证方式，用于为Outlook客户端提供地址簿的副本，减轻Exchange的负担")
     group.add_option("--rpc", dest="rpc", default=False, action='store_true',
-                     help=u"rpc接口，早期的Outlook还使用称为Outlook Anywhere的RPC交互")
-    group.add_option("--api", dest="api", default=False, action='store_true', help=u"api接口")
+                     help=u"rpc接口，NTLM认证方式，早期的Outlook还使用称为Outlook Anywhere的RPC交互")
+    group.add_option("--api", dest="api", default=False, action='store_true', help=u"api接口，NTLM认证方式")
     group.add_option("--owa", dest="owa", default=False, action='store_true',
-                     help=u"owa接口，Exchange owa 接口，用于通过web应用程序访问邮件、日历、任务和联系人等")
+                     help=u"owa接口，http认证方式，Exchange owa 接口，用于通过web应用程序访问邮件、日历、任务和联系人等")
     group.add_option("--powershell", dest="powershell", default=False, action='store_true',
                      help=u"powershell接口，用于服务器管理的Exchange管理控制台")
     group.add_option("--ecp", dest="ecp", default=False, action='store_true',
-                     help=u"ecp接口，Exchange管理中心，管理员用于管理组织中的Exchange的Web控制台")
+                     help=u"ecp接口，http认证方式，Exchange管理中心，管理员用于管理组织中的Exchange的Web控制台")
     parser.add_option_group(group)
 
     options, _ = parser.parse_args()
