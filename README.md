@@ -83,6 +83,7 @@
 >      
 >      [root@grayddq  EBurst]# python EBurst.py -L users.txt -p 123456abc -d mail.xxx.com
 >      
+>      [root@grayddq  EBurst]# python EBurst.py -L users.txt -p 123456abc -d mail.xxx.com --ews
 
 
 
