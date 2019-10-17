@@ -17,7 +17,7 @@ class Check_Exchange_User:
             "rpc": {"url": "https://%s/rpc" % domain, "mode": "NTLM"},
             "api": {"url": "https://%s/api" % domain, "mode": "NTLM"},
             "owa": {"url": "https://%s/owa/auth.owa" % domain, "mode": "HTTP"},
-            "powershell": {"url": "https://%s/powershell" % domain, "mode": "NTLM"},
+            "powershell": {"url": "https://%s/powershell" % domain, "mode": "Kerberos"},
             "ecp": {"url": "https://%s/ecp" % domain, "mode": "HTTP"}
         }
         self.HEADERS = {
@@ -265,7 +265,7 @@ if __name__ == '__main__':
     group.add_option("--owa", dest="owa", default=False, action='store_true',
                      help=u"owa接口，http认证方式，Exchange owa 接口，用于通过web应用程序访问邮件、日历、任务和联系人等")
     group.add_option("--powershell", dest="powershell", default=False, action='store_true',
-                     help=u"powershell接口，用于服务器管理的Exchange管理控制台")
+                     help=u"powershell接口（暂不支持），Kerberos认证方式，用于服务器管理的Exchange管理控制台")
     group.add_option("--ecp", dest="ecp", default=False, action='store_true',
                      help=u"ecp接口，http认证方式，Exchange管理中心，管理员用于管理组织中的Exchange的Web控制台")
     parser.add_option_group(group)
