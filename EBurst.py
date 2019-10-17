@@ -6,19 +6,31 @@ from lib.consle_width import getTerminalSize
 
 
 class Check_Exchange_User:
-    def __init__(self, domain, type=None, user=None, userfile=None, password=None, passfile=None, thread=10):
+    def __init__(self, domain, type=None, protocol=None, user=None, userfile=None, password=None, passfile=None,
+                 thread=10):
         self.domain, self.user, self.userfile, self.password, self.passfile, self.thread = domain, user, userfile, password, passfile, thread
         self.URL = {
-            "autodiscover": {"url": "https://%s/autodiscover" % domain, "mode": "NTLM"},
-            "ews": {"url": "https://%s/ews" % domain, "mode": "NTLM"},
-            "mapi": {"url": "https://%s/mapi" % domain, "mode": "NTLM"},
-            "activesync": {"url": "https://%s/Microsoft-Server-ActiveSync" % domain, "mode": "Basic"},
-            "oab": {"url": "https://%s/oab" % domain, "mode": "NTLM"},
-            "rpc": {"url": "https://%s/rpc" % domain, "mode": "NTLM"},
-            "api": {"url": "https://%s/api" % domain, "mode": "NTLM"},
-            "owa": {"url": "https://%s/owa/auth.owa" % domain, "mode": "HTTP"},
-            "powershell": {"url": "https://%s/powershell" % domain, "mode": "Kerberos"},
-            "ecp": {"url": "https://%s/ecp" % domain, "mode": "HTTP"}
+            "autodiscover":
+                {"url": "%s://%s/autodiscover" % ("http" if protocol == "http" else "https", domain), "mode": "NTLM"},
+            "ews":
+                {"url": "%s://%s/ews" % ("http" if protocol == "http" else "https", domain), "mode": "NTLM"},
+            "mapi":
+                {"url": "%s://%s/mapi" % ("http" if protocol == "http" else "https", domain), "mode": "NTLM"},
+            "activesync":
+                {"url": "%s://%s/Microsoft-Server-ActiveSync" % ("http" if protocol == "http" else "https", domain),
+                 "mode": "Basic"},
+            "oab":
+                {"url": "%s://%s/oab" % ("http" if protocol == "http" else "https", domain), "mode": "NTLM"},
+            "rpc":
+                {"url": "%s://%s/rpc" % ("http" if protocol == "http" else "https", domain), "mode": "NTLM"},
+            "api":
+                {"url": "%s://%s/api" % ("http" if protocol == "http" else "https", domain), "mode": "NTLM"},
+            "owa":
+                {"url": "%s://%s/owa/auth.owa" % ("http" if protocol == "http" else "https", domain), "mode": "HTTP"},
+            "powershell":
+                {"url": "%s://%s/powershell" % ("http" if protocol == "http" else "https", domain), "mode": "Kerberos"},
+            "ecp":
+                {"url": "%s://%s/ecp" % ("http" if protocol == "http" else "https", domain), "mode": "HTTP"}
         }
         self.HEADERS = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:69.0) Gecko/20100101 Firefox/69.0",
@@ -210,7 +222,7 @@ class Check_Exchange_User:
                 return False
         return True
 
-    #开始多线程扫描
+    # 开始多线程扫描
     def _scan(self):
         self.lock.acquire()
         self.thread_count += 1
@@ -274,6 +286,7 @@ if __name__ == '__main__':
     parser.add_option("-p", dest="password", help=u"指定密码")
     parser.add_option("-T", "--t", dest="thread", type="int", default=100, help=u"线程数量，默认为100")
     parser.add_option("-C", "--c", dest="check", default=False, action='store_true', help=u"验证各接口是否存在爆破的可能性")
+    parser.add_option("--protocol", dest="protocol", action='store_true', help=u"通讯协议默认https，demo: --protocol http")
 
     group = optparse.OptionGroup(parser, "type", u"EBurst 扫描所用的接口")
     group.add_option("--autodiscover", dest="autodiscover", default=True, action='store_true',
@@ -322,6 +335,7 @@ if __name__ == '__main__':
 
         scan = Check_Exchange_User(options.domain,
                                    type,
+                                   options.protocol,
                                    options.user,
                                    options.userfile,
                                    options.password,
