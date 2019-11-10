@@ -110,9 +110,6 @@ class Check_Exchange_User:
                 "passwordText": "",
                 "isUtf8": "1"
             }
-            # proxies = {'http': 'http://127.0.0.1:8080',
-            #            'https': 'https://127.0.0.1:8080'
-            #            }
             request = requests.session()
             request.keep_alive = False
             response = request.post(url, data=data, headers=HEADERS, allow_redirects=False)
